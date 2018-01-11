@@ -4,13 +4,13 @@
 #
 # CSCI 305 - Ruby Programming Lab
 #
-# <firstname> <lastname>
-# <email-address>
+# Jacob Senecal
+# jacobsenecal@yahoo.com
 #
 ###############################################################
 
-$bigrams = Hash.new # The Bigram data structure
-$name = "<firstname> <lastname>"
+$bigrams = Hash.new { |hash, key| hash[key] = Hash.new(0) } # The Bigram data structure
+$name = "Jacob Senecal"
 
 # function to process each line of a file and extract the song titles
 def process_file(file_name)
@@ -18,14 +18,63 @@ def process_file(file_name)
 
 	begin
 		IO.foreach(file_name) do |line|
-			# do something for each line
-		end
+			# Pull title out of text line
+			title = cleanup_title(line)
+		  #title = /.+<SEP>(.+)/.match(line)[1]
+
+			if not title.nil?
+			  # Split title into individual words
+			  words = title.split(" ")
+
+				# Count subsequent words
+				for i in 0..words.length-2
+					$bigrams[words[i]][words[i+1]] += 1
+				end
+			end
+
+	end
 
 		puts "Finished. Bigram model built.\n"
 	rescue
 		STDERR.puts "Could not open file"
 		exit 4
 	end
+end
+
+def cleanup_title(line)
+	title = /.+<SEP>(.+)/.match(line)[1]
+
+	# Eliminate braces brackets, and parentheses
+	title = title.gsub(/[{\[\(].*/, "")
+
+	# Eliminate +, =, `, *, :, _, -, #
+	title = title.gsub(/[\+=`\*:_\-#"].*/, "")
+
+	# Eliminate slashes
+	title = title.gsub(/[\\\/].*/, "")
+
+	# Eliminate feat.
+	title = title.gsub(/(feat.).*/, "")
+
+	# Eliminate punctuation
+	title = title.gsub(/[\?¿!¡\.;&@%#|]/, "")
+
+	# Make title lowercase
+	title = title.downcase
+
+	# Filter out non-english songs
+	unless title.match(/^[\d\w\s']+$/)
+		title = nil
+	end
+
+	return title
+end
+
+# Function for testing
+def mcw(inWord)
+	subsequent_words = $bigrams[inWord]
+	most_common_word = subsequent_words.max_by{|k,v| v}
+	return most_common_word[0]
 end
 
 # Executes the program
@@ -43,4 +92,4 @@ def main_loop()
 	# Get user input
 end
 
-main_loop()
+# main_loop()
