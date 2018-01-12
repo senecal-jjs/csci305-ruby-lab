@@ -23,6 +23,9 @@ def process_file(file_name)
 		  #title = /.+<SEP>(.+)/.match(line)[1]
 
 			if not title.nil?
+				# open('myfile.txt', 'a') do |f|
+	 			# 	f.puts title + "\n"
+				# end
 			  # Split title into individual words
 			  words = title.split(" ")
 
@@ -31,8 +34,8 @@ def process_file(file_name)
 					$bigrams[words[i]][words[i+1]] += 1
 				end
 			end
-
 	end
+	# puts $bigrams["love"]
 
 		puts "Finished. Bigram model built.\n"
 	rescue
@@ -42,6 +45,7 @@ def process_file(file_name)
 end
 
 def cleanup_title(line)
+	# Extract title from line of text
 	title = /.+<SEP>(.+)/.match(line)[1]
 
 	# Eliminate braces brackets, and parentheses
@@ -70,11 +74,24 @@ def cleanup_title(line)
 	return title
 end
 
-# Function for testing
+# Function returns the word the most often follows the argument passed to the function
 def mcw(inWord)
 	subsequent_words = $bigrams[inWord]
 	most_common_word = subsequent_words.max_by{|k,v| v}
 	return most_common_word[0]
+end
+
+def create_title(inWord)
+	i = 0
+	new_title = ""
+	next_word = mcw(inWord)
+
+	while i < 20 and not next_word.nil? do
+		new_title += next_word + " "
+		next_word = mcw(next_word)
+	end
+
+	return new_title
 end
 
 # Executes the program
@@ -92,4 +109,4 @@ def main_loop()
 	# Get user input
 end
 
-# main_loop()
+#main_loop()
