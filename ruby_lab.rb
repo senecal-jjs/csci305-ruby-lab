@@ -20,14 +20,18 @@ def process_file(file_name)
 		IO.foreach(file_name) do |line|
 			# Pull title out of text line
 			title = cleanup_title(line)
-		  #title = /.+<SEP>(.+)/.match(line)[1]
 
 			if not title.nil?
-				# open('myfile.txt', 'a') do |f|
-	 			# 	f.puts title + "\n"
-				# end
 			  # Split title into individual words
 			  words = title.split(" ")
+
+				# Remove stop words
+				stop_words = ['a', 'an', 'and', 'by', 'for', 'from', 'in', 'of', 'on',
+					            'or', 'out', 'the', 'to', 'with']
+
+				for i in 0..stop_words.length-1
+					words.delete(stop_words[i])
+				end
 
 				# Count subsequent words
 				for i in 0..words.length-2
@@ -35,7 +39,6 @@ def process_file(file_name)
 				end
 			end
 	end
-	# puts $bigrams["love"]
 
 		puts "Finished. Bigram model built.\n"
 	rescue
@@ -74,21 +77,58 @@ def cleanup_title(line)
 	return title
 end
 
-# Function returns the word the most often follows the argument passed to the function
+# Function returns the word that most often follows the argument passed to the function
 def mcw(inWord)
 	subsequent_words = $bigrams[inWord]
 	most_common_word = subsequent_words.max_by{|k,v| v}
-	return most_common_word[0]
+
+	# If the word pulled from the hash is not nil return the key from the key value pair
+	if not most_common_word.nil?
+	  return most_common_word[0]
+	else
+		return nil
+	end
 end
 
+# Function creates a title from a seed word and the bigram hash
 def create_title(inWord)
 	i = 0
-	new_title = ""
+
+	# First word of the title is the seed
+	new_title = inWord
+
+	# Next word is the most common word following the seed
 	next_word = mcw(inWord)
 
-	while i < 20 and not next_word.nil? do
-		new_title += next_word + " "
-		next_word = mcw(next_word)
+	# Track if a word has already been used
+	word_pattern = Hash.new(0)
+
+	# Add initial words
+	word_pattern[inWord] += 1
+	word_pattern[next_word] += 1
+
+	# Create list of available words
+	keys = $bigrams.keys
+
+	stop_flag = false
+	while !stop_flag and not next_word.nil? do
+		new_title += " " + next_word
+		new_word = mcw(next_word)
+
+		# Check if next word has already been used
+		if word_pattern[new_word] > 0
+			# If word has already been used terminate song title to prevent repeating pattern
+			word_possibilites = $bigrams[next_word]
+
+			# Select key out of subsequent words
+			next_word_list = word_possibilites.keys
+			next_word = next_word_list[rand(next_word_list.length)]
+			#stop_flag = true
+		end
+
+		# Add next word to list of used words
+		word_pattern[next_word] += 1
+		i += 1
 	end
 
 	return new_title
@@ -107,6 +147,16 @@ def main_loop()
 	process_file(ARGV[0])
 
 	# Get user input
+	response = ""
+	begin
+		puts "Enter a word [Enter 'q' to quit]: "
+	  STDOUT.flush()
+	  response = STDIN.gets.chomp
+		if response != "q"
+		  new_song = create_title(response)
+		  puts new_song
+		end
+	end while response != "q"
 end
 
-#main_loop()
+main_loop()
